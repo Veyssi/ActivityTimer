@@ -7,11 +7,11 @@
 
 功能简单：设定时间→循环提醒
 
-<img width="598" height="786" alt="image" src="https://github.com/user-attachments/assets/8bbf9b8f-5e03-4b23-8187-f12116fb18d0" />
+<img width="597" height="737" alt="image" src="https://github.com/user-attachments/assets/4d204052-ac99-4cf4-9da9-3b7d6ab94bbe" />
 
 定时起身动动走走。
 
-<img width="235" height="221" alt="image" src="https://github.com/user-attachments/assets/63c0a722-c840-44f5-b1c2-d45ac102d2ef" />
+<img width="237" height="250" alt="image" src="https://github.com/user-attachments/assets/76c5bdce-0e4f-4d22-bd5d-f917c1c13bad" />
 
 
 关闭窗口默认隐藏到托盘后台运行
@@ -75,7 +75,7 @@ __init__()
 
 ### 窗口特性
 
-- **无系统边框**：使用 `overrideredirect(True)` 移除默认边框，自定义暗色主题
+- **无系统边框**：使用 `overrideredirect(True)` 移除默认边框，暗色主题
 - **居中启动**：程序启动时自动计算屏幕尺寸并居中显示
 - **鼠标拖动**：支持在窗口非交互区域（标题区、空白处）点击拖动，设置区的输入框/按钮等控件点击不触发拖动
 - **自定义关闭按钮**：右上角暗色 "✕" 按钮，悬停高亮
