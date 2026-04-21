@@ -36,6 +36,7 @@
 | 托盘 | `pystray` + `PIL` | 系统托盘图标与菜单 |
 | 通知 | `plyer.notification` | 系统级弹窗通知 |
 | 音频 | `winsound` | Windows 提示音 |
+| 自启 | `winreg` | Windows 注册表开机自启 |
 | 并发 | `threading` | 托盘线程（daemon） |
 
 ---
@@ -51,6 +52,7 @@
 | `is_running` | bool | 是否正在运行 |
 | `is_paused` | bool | 是否已暂停 |
 | `is_window_visible` | bool | 窗口是否可见 |
+| `auto_start` | bool | 是否开机自启（注册表） |
 | `_after_id` | str | tkinter `after()` 回调 ID，用于取消 |
 
 ### UI 构建流程
@@ -64,6 +66,7 @@ __init__()
  │    ├── create_progress_bar() # 自定义进度条
  │    ├── create_settings()     # 输入框：循环时长（分钟）
  │    └── create_buttons()      # 开始 / 重置 / 状态 三个按钮
+ ├── _init_auto_start()        # 读取注册表初始化开机自启
  └── protocol(WM_DELETE_WINDOW) # 关闭 → 隐藏而非退出
 ```
 
@@ -89,11 +92,14 @@ __init__()
 | `update_time_display()` | 每秒回调：更新进度条 + 倒计时文本 |
 | `show_notification()` | plyer 系统通知 + winsound 提示音 |
 | `on_window_close()` | 窗口关闭 → `withdraw()` 隐藏到托盘 |
+| `_init_auto_start()` | 读取注册表初始化开机自启状态 |
+| `toggle_auto_start()` | 切换注册表自启项，实时更新菜单勾选标记 |
 
 ### 托盘功能
 
 - **创建**：`pystray.Icon` + PIL 图像（32x32，霓虹绿 "T"）
-- **菜单项**：显示/隐藏、开始/暂停、重置计时、查看状态、退出
+- **菜单项**：显示/隐藏、开始/暂停、重置计时、查看状态、**开机自启**、退出
+- **开机自启**：托盘菜单中切换，实时读写 Windows 注册表 `HKCU\...\Run`，无需重启
 - **实现方式**：daemon 线程运行 `tray_icon.run()`，主线程通过 `after(500, poll_tray)` 轮询更新
 
 ### 启动入口
