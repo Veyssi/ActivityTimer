@@ -11,7 +11,8 @@
 
 定时起身动动走走。
 
-<img width="205" height="169" alt="image" src="https://github.com/user-attachments/assets/b08aa8e6-505b-4de3-9ce3-b693a9a3d94e" />
+<img width="235" height="221" alt="image" src="https://github.com/user-attachments/assets/63c0a722-c840-44f5-b1c2-d45ac102d2ef" />
+
 
 关闭窗口默认隐藏到托盘后台运行
 
@@ -22,7 +23,6 @@
 全屏以及忙碌、专注等状态默认系统提醒设置
 
 **不影响全屏玩游戏和日常使用**
-
 
 </div>
 
@@ -142,9 +142,13 @@ python ActivityTimer.py
 
 ```bash
 pip install pyinstaller
-pyinstaller --onefile --noconsole --name ActivityTimer ActivityTimer.py
+pyinstaller --name "ActivityTimer" --noconsole --onefile --clean --hidden-import=plyer.platforms.win --hidden-import=plyer.platforms.win.notification --hidden-import=plyer.platforms.win.audio ActivityTimer.py
 ```
 
 - `--onefile`：单文件打包
 - `--noconsole`：不弹出控制台窗口
+- `--hidden-import=plyer.platforms.win`：静态分析时可能漏掉 plyer 的动态平台模块，手动加入
+- `--hidden-import=plyer.platforms.win.notification`：同上，Windows 通知子模块
+- `--hidden-import=plyer.platforms.win.audio`：同上，Windows 音频子模块
+- 如果不手动指定，打包后的 exe 运行时可能报 ModuleNotFoundError。
 - 生成的 `dist/ActivityTimer.exe` 可直接双击运行
