@@ -7,15 +7,22 @@
 
 功能简单：设定时间→循环提醒
 
+<img width="674" height="853" alt="image" src="https://github.com/user-attachments/assets/616847cd-f499-43cb-ab62-f7bf9ae53040" />
+
 定时起身动动走走。
 
-关闭窗口默认隐藏到托盘后台运行，深色半透明主题 UI
+<img width="205" height="169" alt="image" src="https://github.com/user-attachments/assets/b08aa8e6-505b-4de3-9ce3-b693a9a3d94e" />
+
+关闭窗口默认隐藏到托盘后台运行
+
+<img width="584" height="207" alt="image" src="https://github.com/user-attachments/assets/0dae0041-dbf5-41e7-9143-fd101ce22300" />
 
 调用系统气泡通知和声音，符合日常使用习惯感觉更自然
 
 全屏以及忙碌、专注等状态默认系统提醒设置
 
 **不影响全屏玩游戏和日常使用**
+
 
 </div>
 
