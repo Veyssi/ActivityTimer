@@ -14,10 +14,16 @@ class ActivityTimerApp:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("活动计时器")
-        self.root.geometry("480x600")
+        self.root.geometry("480x590")
         self.root.configure(bg="#16213e")
         self.root.resizable(False, False)
         self.root.attributes("-alpha", 0.95)
+
+        # 移除系统边框
+        self.root.overrideredirect(True)
+
+        # 居中屏幕
+        self._center_window()
         
         # 数据状态
         self.duration_minutes = 45
@@ -38,6 +44,9 @@ class ActivityTimerApp:
         # 开机自启状态
         self.auto_start = False
 
+        # 背景透明度开关（True=透明，False=不透明）
+        self.is_transparent = True
+
         # 初始化样式
         self.init_style()
         
@@ -49,6 +58,17 @@ class ActivityTimerApp:
 
         # 拦截窗口关闭事件
         self.root.protocol("WM_DELETE_WINDOW", self.on_window_close)
+
+    def _center_window(self):
+        """将窗口居中显示在屏幕上"""
+        self.root.update_idletasks()
+        width = self.root.winfo_width()
+        height = self.root.winfo_height()
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        x = (screen_width - width) // 2
+        y = (screen_height - height) // 2
+        self.root.geometry(f'{width}x{height}+{x}+{y}')
 
     def init_style(self):
         """配置现代简约暗色主题样式"""
@@ -88,12 +108,19 @@ class ActivityTimerApp:
                       background=[('active', '#2d4a7c'), ('pressed', '#3d5a8c')],
                       foreground=[('active', '#ffffff')])
 
-        # 输入框
+        # 输入框 - 使用自定义颜色边框替代白色系统边框
         self.style.configure('Input.TEntry',
                            fieldbackground='#0f3460',
                            foreground='#e8e8e8',
                            insertcolor='#00d9ff',
-                           padding=8)
+                           padding=8,
+                           borderwidth=1,
+                           lightcolor='#1a4a7c',
+                           darkcolor='#0a2a50',
+                           troughcolor='#0f3460')
+        self.style.map('Input.TEntry',
+                       background=[('focus', '#0f3460'), ('active', '#1a4a7c')],
+                       foreground=[('focus', '#e8e8e8')])
 
         # 进度条
         self.style.configure('Custom.Horizontal.TProgressbar',
@@ -118,17 +145,39 @@ class ActivityTimerApp:
                        background=[('active', '#1f3460'), ('selected', '#0f3460')],
                        foreground=[('active', '#ffffff'), ('selected', '#00d9ff')])
 
+    def _create_close_button(self):
+        """创建右上角关闭按钮"""
+        self.close_btn = tk.Label(
+            self.root,
+            text="✕",
+            font=('Microsoft YaHei', 14),
+            bg='#16213e',
+            fg='#9ca3af',
+            cursor='hand2'
+        )
+        # 获取窗口宽度并定位到右上角
+        self.close_btn.place(relx=1.0, y=2, anchor='ne')
+        self.close_btn.bind('<Enter>', lambda _e: self.close_btn.config(fg='#ffffff'))
+        self.close_btn.bind('<Leave>', lambda _e: self.close_btn.config(fg='#9ca3af'))
+        self.close_btn.bind('<Button-1>', lambda _e: self.on_window_close())
+
     def create_ui(self):
         """构建用户界面"""
+        # 关闭按钮（右上角）
+        self._create_close_button()
+
         # 标题区
         self.create_header()
-        
+
         # 时间显示
         self.create_time_display()
-        
+
         # 进度条
         self.create_progress_bar()
-        
+
+        # 设置文字
+        self.create_settings_text()
+
         # 设置区域
         self.create_settings()
         
@@ -144,6 +193,54 @@ class ActivityTimerApp:
             fg='#6b7280'
         )
         self.status_label.pack(pady=(5, 0))
+
+        # 底部签名
+        self._create_footer_signature()
+
+        # 绑定鼠标拖动事件（仅上半部分可拖动）
+        self.root.bind('<Button-1>', self._on_drag_start)
+        self.root.bind('<B1-Motion>', self._on_drag_motion)
+        self.root.bind('<ButtonRelease>', self._on_drag_release)
+
+    def _on_drag_start(self, event):
+        """仅当鼠标在非交互控件上按下时开始拖动"""
+        widget_name = event.widget.winfo_class()
+        # 排除所有可交互的 ttk/tk 控件
+        if widget_name in ('Button', 'Entry', 'TEntry', 'Checkbutton', 'TCheckbutton',
+                           'LabelFrame', 'TLabelframe'):
+            return
+        self._drag_x = event.x_root
+        self._drag_y = event.y_root
+        self._is_dragging = True
+        return "break"
+
+    def _on_drag_motion(self, event):
+        """计算窗口移动距离并更新位置"""
+        if not getattr(self, '_is_dragging', False):
+            return
+        delta_x = event.x_root - self._drag_x
+        delta_y = event.y_root - self._drag_y
+        x = self.root.winfo_x() + delta_x
+        y = self.root.winfo_y() + delta_y
+        self.root.geometry(f"+{x}+{y}")
+        # 更新记录位置
+        self._drag_x = event.x_root
+        self._drag_y = event.y_root
+
+    def _on_drag_release(self, _event):
+        """鼠标释放时重置拖动状态"""
+        self._is_dragging = False
+
+    def _create_footer_signature(self):
+        """创建底部签名"""
+        self.footer_label = tk.Label(
+            self.root,
+            text='Veyssi · github.com/Veyssi/ActivityTimer',
+            font=('Microsoft YaHei', 8),
+            bg='#16213e',
+            fg='#4b5563'
+        )
+        self.footer_label.pack(side='bottom', fill='x', pady=(0, 5))
 
     def create_header(self):
         """创建标题区域"""
@@ -189,42 +286,60 @@ class ActivityTimerApp:
         )
         self.progress_bar.pack(pady=15)
 
-    def create_settings(self):
-        """创建设置区域"""
-        settings_frame = ttk.LabelFrame(
+    def create_settings_text(self):
+        # 独立的"设置"标签，放在框外左上角
+        self.settings_label = tk.Label(
             self.root,
             text="设置",
-            padding=15,
-            style='Settings.TLabelframe'
+            font=('Microsoft YaHei', 10),
+            bg='#16213e',
+            fg='#00d9ff'
         )
-        settings_frame.pack(padx=30, pady=10, fill='x')
+        self.settings_label.pack(pady=(10, 0), padx=30, anchor='w')
+    def create_settings(self):
+        """创建设置区域"""
+        # 外层 tk.Frame 提供自定义颜色的边框，替代 ttk.LabelFrame 的白色系统边框
+        self.settings_outer = tk.Frame(
+            self.root,
+            bd=0,
+            highlightthickness=1,
+            highlightbackground='#0f3460',
+            bg='#16213e'
+        )
+        self.settings_outer.pack(padx=30, pady=5, fill='x')
 
         # 标签
         tk.Label(
-            settings_frame,
+            self.settings_outer,
             text="循环时长",
             font=('Microsoft YaHei', 10),
             bg='#16213e',
             fg='#9ca3af'
-        ).grid(row=0, column=0, padx=(10, 5), pady=8, sticky='e')
+        ).grid(row=0, column=0, padx=(6, 4), pady=8, sticky='e')
 
         # 输入框
         self.entry_time = ttk.Entry(
-            settings_frame,
-            width=8,
-            style='Input.TEntry'
+            self.settings_outer,
+            width=15,
+            style='Input.TEntry',
+            justify='center'
         )
         self.entry_time.insert(0, str(self.duration_minutes))
         self.entry_time.grid(row=0, column=1, padx=5, pady=8)
 
         # 单位
         tk.Label(
-            settings_frame,
+            self.settings_outer,
             text="分钟",
             font=('Microsoft YaHei', 10),
             bg='#16213e',
             fg='#9ca3af'
-        ).grid(row=0, column=2, padx=(5, 10), pady=8, sticky='w')
+        ).grid(row=0, column=2, padx=(4, 6), pady=8, sticky='w')
+
+        # 调整三列权重，让左右标签向中间靠拢
+        self.settings_outer.grid_columnconfigure(0, weight=1)
+        self.settings_outer.grid_columnconfigure(1, weight=2)
+        self.settings_outer.grid_columnconfigure(2, weight=1)
 
     def create_buttons(self):
         """创建控制按钮"""
@@ -403,6 +518,12 @@ class ActivityTimerApp:
         self.root.withdraw()
         self.is_window_visible = False
 
+    def toggle_transparency(self, _icon=None, item=None):
+        """切换背景透明/不透明"""
+        self.is_transparent = not (item and item.checked)
+        alpha = 0.95 if self.is_transparent else 1.0
+        self.root.attributes("-alpha", alpha)
+
     def create_tray_menu(self):
         """创建托盘菜单"""
         menu = (
@@ -414,6 +535,11 @@ class ActivityTimerApp:
                 "开机自启",
                 self.toggle_auto_start,
                 checked=lambda _: self.auto_start
+            ),
+            pystray.MenuItem(
+                "背景透明",
+                self.toggle_transparency,
+                checked=lambda _: self.is_transparent
             ),
             pystray.MenuItem("退出", self.on_tray_quit)
         )
