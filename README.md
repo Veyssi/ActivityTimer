@@ -53,6 +53,7 @@
 | `is_paused` | bool | 是否已暂停 |
 | `is_window_visible` | bool | 窗口是否可见 |
 | `auto_start` | bool | 是否开机自启（注册表） |
+| `is_transparent` | bool | 背景透明开关（托盘菜单控制） |
 | `_after_id` | str | tkinter `after()` 回调 ID，用于取消 |
 
 ### UI 构建流程
@@ -61,14 +62,24 @@
 __init__()
  ├── init_style()          # 暗色主题样式配置
  ├── create_ui()
+ │    ├── _create_close_button()   # 右上角自定义关闭按钮（悬停变色）
  │    ├── create_header()       # "STAND UP TIMER" 标题 + 副标题
  │    ├── create_time_display() # Consolas 48px 倒计时
  │    ├── create_progress_bar() # 自定义进度条
  │    ├── create_settings()     # 输入框：循环时长（分钟）
  │    └── create_buttons()      # 开始 / 重置 / 状态 三个按钮
  ├── _init_auto_start()        # 读取注册表初始化开机自启
+ ├── _center_window()          # 计算屏幕尺寸并居中显示
  └── protocol(WM_DELETE_WINDOW) # 关闭 → 隐藏而非退出
 ```
+
+### 窗口特性
+
+- **无系统边框**：使用 `overrideredirect(True)` 移除默认边框，自定义暗色主题
+- **居中启动**：程序启动时自动计算屏幕尺寸并居中显示
+- **鼠标拖动**：支持在窗口非交互区域（标题区、空白处）点击拖动，设置区的输入框/按钮等控件点击不触发拖动
+- **自定义关闭按钮**：右上角暗色 "✕" 按钮，悬停高亮
+- **背景透明开关**：托盘菜单中可切换窗口半透明（alpha=0.95）与不透明（alpha=1.0）
 
 ### 计时器状态机
 
@@ -98,7 +109,7 @@ __init__()
 ### 托盘功能
 
 - **创建**：`pystray.Icon` + PIL 图像（32x32，霓虹绿 "T"）
-- **菜单项**：显示/隐藏、开始/暂停、重置计时、查看状态、**开机自启**、退出
+- **菜单项**：显示/隐藏、开始/暂停、重置计时、查看状态、**开机自启**、**背景透明**、退出
 - **开机自启**：托盘菜单中切换，实时读写 Windows 注册表 `HKCU\...\Run`，无需重启
 - **实现方式**：daemon 线程运行 `tray_icon.run()`，主线程通过 `after(500, poll_tray)` 轮询更新
 
