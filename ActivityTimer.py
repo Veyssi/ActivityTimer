@@ -14,7 +14,7 @@ class ActivityTimerApp:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("活动计时器")
-        self.root.geometry("480x590")
+        self.root.geometry("480x605")
         self.root.configure(bg="#16213e")
         self.root.resizable(False, False)
         self.root.attributes("-alpha", 0.95)
