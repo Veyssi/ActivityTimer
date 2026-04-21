@@ -1,6 +1,23 @@
-# Activity Timer — 久坐站立提醒计时器
+<h1 align="center">Activity Timer — 久坐站立提醒计时器</h1>
 
-基于 Python + tkinter 开发的桌面应用，用于提醒用户定时起身活动。采用暗色主题 UI、系统托盘图标和系统通知。
+
+<div align="center">
+
+基于 Python + tkinter 开发的纯提醒桌面应用
+
+功能简单：设定时间→循环提醒
+
+定时起身动动走走。
+
+关闭窗口默认隐藏到托盘后台运行，深色半透明主题 UI
+
+调用系统气泡通知和声音，符合日常使用习惯感觉更自然
+
+全屏以及忙碌、专注等状态默认系统提醒设置
+
+**不影响全屏玩游戏和日常使用**
+
+</div>
 
 ---
 
@@ -94,10 +111,27 @@ if __name__ == "__main__":
 
 ---
 
-## 依赖安装
+## 源码运行以及构建的依赖安装
 
 ```bash
 pip install plyer pystray Pillow
 ```
 
 > `tkinter`、`threading`、`time`、`os`、`winsound` 均为 Python 标准库，无需额外安装。
+
+### 源码运行
+
+```bash
+python ActivityTimer.py
+```
+
+### Windows 构建（打包为 exe）
+
+```bash
+pip install pyinstaller
+pyinstaller --onefile --noconsole --name ActivityTimer ActivityTimer.py
+```
+
+- `--onefile`：单文件打包
+- `--noconsole`：不弹出控制台窗口
+- 生成的 `dist/ActivityTimer.exe` 可直接双击运行
