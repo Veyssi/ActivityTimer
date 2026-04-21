@@ -7,7 +7,7 @@
 
 功能简单：设定时间→循环提醒
 
-<img width="597" height="737" alt="image" src="https://github.com/user-attachments/assets/4d204052-ac99-4cf4-9da9-3b7d6ab94bbe" />
+<img width="597" height="752" alt="image" src="https://github.com/user-attachments/assets/95412a02-a05d-468b-a08c-0b7c29437d91" />
 
 定时起身动动走走。
 
