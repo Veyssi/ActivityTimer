@@ -6,7 +6,9 @@ import time
 import pystray
 from PIL import Image, ImageDraw
 import os
+import sys
 import winsound
+import winreg as wr
 
 class ActivityTimerApp:
     def __init__(self):
@@ -32,13 +34,19 @@ class ActivityTimerApp:
         
         # 初始化托盘
         self.tray_icon = None
-        
+
+        # 开机自启状态
+        self.auto_start = False
+
         # 初始化样式
         self.init_style()
         
         # 构建界面
         self.create_ui()
-        
+
+        # 初始化开机自启状态
+        self._init_auto_start()
+
         # 拦截窗口关闭事件
         self.root.protocol("WM_DELETE_WINDOW", self.on_window_close)
 
@@ -103,6 +111,12 @@ class ActivityTimerApp:
                            background='#16213e',
                            foreground='#00d9ff',
                            font=('Microsoft YaHei', 10))
+
+        # Checkbutton 暗色样式
+        self.style.configure('Input.TCheckbutton', background='#16213e', foreground='#e8e8e8')
+        self.style.map('Input.TCheckbutton',
+                       background=[('active', '#1f3460'), ('selected', '#0f3460')],
+                       foreground=[('active', '#ffffff'), ('selected', '#00d9ff')])
 
     def create_ui(self):
         """构建用户界面"""
@@ -349,7 +363,7 @@ class ActivityTimerApp:
             notification.notify(
                 title="活动提醒",
                 message=message,
-                timeout=20,
+                timeout=0,
                 app_name="Activity Timer"
             )
             winsound.MessageBeep(winsound.MB_OK)
@@ -396,6 +410,11 @@ class ActivityTimerApp:
             pystray.MenuItem("开始/暂停", self.toggle_timer),
             pystray.MenuItem("重置计时", self.reset_timer),
             pystray.MenuItem("查看状态", self.show_current_status),
+            pystray.MenuItem(
+                "开机自启",
+                self.toggle_auto_start,
+                checked=lambda _: self.auto_start
+            ),
             pystray.MenuItem("退出", self.on_tray_quit)
         )
         return menu
@@ -404,6 +423,42 @@ class ActivityTimerApp:
         """从托盘退出"""
         self.tray_icon.stop()
         self.root.quit()
+
+    # ---------- 开机自启 ----------
+
+    def _get_exe_path(self):
+        """获取当前 exe 路径（打包后和开发时都适用）"""
+        if getattr(os, 'frozen', False):
+            return os.path.abspath(sys.executable)
+        return os.path.abspath(__file__)
+
+    def _init_auto_start(self):
+        """初始化开机自启状态"""
+        try:
+            key = wr.OpenKey(wr.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, wr.KEY_READ)
+            value, _ = wr.QueryValueEx(key, "ActivityTimer")
+            wr.CloseKey(key)
+            self.auto_start = bool(value)
+        except (FileNotFoundError, OSError):
+            self.auto_start = False
+
+    def toggle_auto_start(self, icon=None, item=None):
+        """实时切换开机自启（更新注册表）"""
+        # item.index 是当前勾选状态的索引：-1=未勾选，>=0=已勾选
+        self.auto_start = not (item and item.checked)
+        exe_path = self._get_exe_path()
+
+        try:
+            key = wr.CreateKey(wr.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run")
+            if self.auto_start:
+                wr.SetValueEx(key, "ActivityTimer", 0, wr.REG_SZ, exe_path)
+            else:
+                wr.DeleteValue(key, "ActivityTimer")
+            wr.CloseKey(key)
+        except OSError as e:
+            messagebox.showerror("错误", f"修改开机自启失败：\n{e}")
+            # 回滚状态
+            self.auto_start = not self.auto_start
 
     def run(self):
         """运行主程序"""
