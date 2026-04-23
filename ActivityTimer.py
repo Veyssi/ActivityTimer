@@ -558,8 +558,48 @@ class ActivityTimerApp:
             return os.path.abspath(sys.executable)
         return os.path.abspath(__file__)
 
+    @staticmethod
+    def _get_startup_folder():
+        """获取用户启动文件夹路径 (shell:startup)"""
+        import ctypes
+        shell = ctypes.windll.shell32
+        buf = ctypes.create_unicode_buffer(260)
+        shell.SHGetFolderPathW(0, 0x07, 0, 0, buf)  # CSIDL_STARTUP = 0x07
+        return os.path.join(buf.value, "ActivityTimer.lnk")
+
+    @staticmethod
+    def _create_lnk(target, lnk_path):
+        """创建 .lnk 快捷方式（二进制格式，零依赖）"""
+        target_bytes = target.encode('utf-16-le')
+        # .lnk header + basic fields
+        header = bytes([
+            0x4C, 0x00, 0x00, 0x00,                    # Signature "L"
+            0x01, 0x00, 0x00, 0x00,                    # Version
+            0x00,                                        # HasLinkInfo
+            0x00,                                        # HasIconLocation
+            0x40, 0x00, 0x00, 0x00,                    # LinkFlags (has_target_path)
+            0x78, 0x00, 0x00, 0x00,                    # RapidFileTime offset
+            0x38, 0x00, 0x00, 0x00,                    # RapidFileTime size
+        ])
+        # Target path length and offset info
+        target_len = len(target_bytes) + 2  # +2 for null terminator
+        body = bytearray()
+        body += target_len.to_bytes(4, 'little')       # Target path length
+        body += b'\x00' * (16 - len(target_bytes))     # Pad to 16 bytes
+        body += target_bytes                             # Target path
+        body += b'\x00\x00'                              # Null terminator
+
+        with open(lnk_path, 'wb') as f:
+            f.write(header + bytes(body))
+
     def _init_auto_start(self):
-        """初始化开机自启状态"""
+        """初始化开机自启状态（优先检查启动文件夹 .lnk）"""
+        lnk_path = self._get_startup_folder()
+        if os.path.exists(lnk_path):
+            self.auto_start = True
+            return
+
+        # 回退到注册表检查
         try:
             key = wr.OpenKey(wr.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, wr.KEY_READ)
             value, _ = wr.QueryValueEx(key, "ActivityTimer")
@@ -569,18 +609,18 @@ class ActivityTimerApp:
             self.auto_start = False
 
     def toggle_auto_start(self, icon=None, item=None):
-        """实时切换开机自启（更新注册表）"""
+        """实时切换开机自启（使用启动文件夹 .lnk，避免 Smart App Control 拦截）"""
         # item.index 是当前勾选状态的索引：-1=未勾选，>=0=已勾选
         self.auto_start = not (item and item.checked)
-        exe_path = self._get_exe_path()
+        lnk_path = self._get_startup_folder()
 
         try:
-            key = wr.CreateKey(wr.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run")
             if self.auto_start:
-                wr.SetValueEx(key, "ActivityTimer", 0, wr.REG_SZ, exe_path)
+                target = self._get_exe_path()
+                self._create_lnk(target, lnk_path)
             else:
-                wr.DeleteValue(key, "ActivityTimer")
-            wr.CloseKey(key)
+                if os.path.exists(lnk_path):
+                    os.remove(lnk_path)
         except OSError as e:
             messagebox.showerror("错误", f"修改开机自启失败：\n{e}")
             # 回滚状态
