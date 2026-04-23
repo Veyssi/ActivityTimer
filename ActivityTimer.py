@@ -553,10 +553,12 @@ class ActivityTimerApp:
     # ---------- 开机自启 ----------
 
     def _get_exe_path(self):
-        """获取当前 exe 路径（打包后和开发时都适用）"""
+        """获取启动命令（打包后返回 exe，开发时返回带 pythonw.exe 的完整命令行）"""
         if getattr(os, 'frozen', False):
             return os.path.abspath(sys.executable)
-        return os.path.abspath(__file__)
+        # 使用 py.exe launcher + 引号包裹的路径，避免 .py 文件关联缺失导致开机无法启动
+        py_path = os.path.abspath(__file__)
+        return f'py.exe -0 "{py_path}"'
 
     @staticmethod
     def _get_startup_folder():
@@ -604,7 +606,7 @@ class ActivityTimerApp:
             key = wr.OpenKey(wr.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, wr.KEY_READ)
             value, _ = wr.QueryValueEx(key, "ActivityTimer")
             wr.CloseKey(key)
-            self.auto_start = bool(value)
+            self.auto_start = bool(value) and value.strip() != ""
         except (FileNotFoundError, OSError):
             self.auto_start = False
 
